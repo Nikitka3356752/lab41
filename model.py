@@ -15,3 +15,10 @@ class NoteTextResponse(BaseModel):
 # Ответ для создания новой заметки
 class CreateNoteResponse(BaseModel):
     id: int
+
+# Ответ для полного списка заметок с их текстом и датами
+class FullNoteResponse(BaseModel):
+    id: int
+    text: str
+    created_at: datetime
+    updated_at: datetime

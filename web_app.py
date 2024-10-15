@@ -1,16 +1,13 @@
 import datetime
 import fastapi
 from typing import List, Dict
-from model import NoteInfoResponse, NoteTextResponse, CreateNoteResponse
+from model import NoteInfoResponse, NoteTextResponse, CreateNoteResponse, FullNoteResponse
 
 api_router = fastapi.APIRouter()
 
 # Временное хранилище заметок
 notes = {
-    1: {"text": "sdjhskdhsdjh", "created_at": datetime.datetime(2022, 11, 10, 12, 30, 10, 123000),
-        "updated_at": datetime.datetime(2022, 11, 11, 12, 10, 10, 123000)},
-    2: {"text": "example note", "created_at": datetime.datetime.now(), "updated_at": datetime.datetime.now()},
-    3: {"text": "another example", "created_at": datetime.datetime.now(), "updated_at": datetime.datetime.now()}
+
 }
 
 
@@ -50,7 +47,7 @@ def get_note_text(note_id: int):
 @api_router.post("/create_note", response_model=CreateNoteResponse)
 def create_note(text: str):
     """
-    Создание новой заметки. ID начинается с 1 и увеличивается на 1 с каждой новой заметкой.
+    Создание новой заметки. ID начинается с 1.
     """
     new_id = max(notes.keys()) + 1 if notes else 1  # Если заметок нет, то начинаем с 1
 
@@ -67,13 +64,21 @@ def create_note(text: str):
     )
 
 
-# Получение списка всех заметок
-@api_router.get("/notes", response_model=Dict[int, int])
-def get_notes():
+# Получение полного списка заметок с текстом и датами
+@api_router.get("/all_notes", response_model=List[FullNoteResponse])
+def get_all_notes():
     """
-    Получение списка всех заметок с их id, начиная с 1.
+    Получение всех заметок с текстом, id, датой создания и обновления.
     """
-    return {i + 1: note_id for i, note_id in enumerate(notes.keys())}
+    return [
+        FullNoteResponse(
+            id=note_id,
+            text=note_data['text'],
+            created_at=note_data['created_at'],
+            updated_at=note_data['updated_at']
+        )
+        for note_id, note_data in notes.items()
+    ]
 
 
 # Удаление заметки
@@ -87,3 +92,23 @@ def delete_note(note_id: int):
 
     del notes[note_id]
     return f"Note {note_id} deleted"
+
+
+# Обновление текста заметки
+@api_router.put("/update_note/{note_id}", response_model=NoteTextResponse)
+def update_note(note_id: int, new_text: str):
+    """
+    Обновление текста заметки по id.
+    """
+    note = notes.get(note_id)
+    if not note:
+        return fastapi.HTTPException(status_code=404, detail="Note not found")
+
+    # Обновляем текст и дату обновления
+    notes[note_id]['text'] = new_text
+    notes[note_id]['updated_at'] = datetime.datetime.now()
+
+    return NoteTextResponse(
+        id=note_id,
+        text=new_text
+    )
