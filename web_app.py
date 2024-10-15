@@ -7,7 +7,13 @@ api_router = fastapi.APIRouter()
 
 # Временное хранилище заметок
 notes = {
+    1: {"text": "sdjhskdhsdjh", "created_at": datetime.datetime(2022, 11, 10, 12, 30, 10, 123000),
+        "updated_at": datetime.datetime(2022, 11, 11, 12, 10, 10, 123000)},
+    2: {"text": "example note", "created_at": datetime.datetime.now(), "updated_at": datetime.datetime.now()},
+    3: {"text": "another example", "created_at": datetime.datetime.now(), "updated_at": datetime.datetime.now()}
 }
+
+
 # Получение информации о заметке
 @api_router.get("/note_info/{note_id}", response_model=NoteInfoResponse)
 def get_note_info(note_id: int):
@@ -40,6 +46,7 @@ def get_note_text(note_id: int):
     )
 
 
+# Создание новой заметки
 @api_router.post("/create_note", response_model=CreateNoteResponse)
 def create_note(text: str):
     """
@@ -54,6 +61,7 @@ def create_note(text: str):
         "created_at": now,
         "updated_at": now
     }
+
     return CreateNoteResponse(
         id=new_id
     )
@@ -63,6 +71,19 @@ def create_note(text: str):
 @api_router.get("/notes", response_model=Dict[int, int])
 def get_notes():
     """
-    Получение списка всех заметок с их id.
+    Получение списка всех заметок с их id, начиная с 1.
     """
-    return {i: note_id for i, note_id in enumerate(notes.keys())}
+    return {i + 1: note_id for i, note_id in enumerate(notes.keys())}
+
+
+# Удаление заметки
+@api_router.delete("/delete_note/{note_id}", response_model=str)
+def delete_note(note_id: int):
+    """
+    Удаление заметки по id.
+    """
+    if note_id not in notes:
+        return fastapi.HTTPException(status_code=404, detail="Note not found")
+
+    del notes[note_id]
+    return f"Note {note_id} deleted"
